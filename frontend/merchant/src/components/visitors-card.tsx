@@ -1,23 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { Users, TrendingUp, TrendingDown, MoreHorizontal, ExternalLink } from "lucide-react";
+import { ShoppingCart, TrendingUp, MoreHorizontal, ExternalLink, Package, Clock, CheckCircle } from "lucide-react";
+import { useAnalytics } from "@/hooks/use-analytics";
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
 
-const VisitorsCard = () => {
+const OrdersCard = () => {
   const [selectedRange, setSelectedRange] = useState("1m");
+  const { data, loading } = useAnalytics<any>("overview");
+
+  const totalOrders = data?.total_orders ? Number(data.total_orders).toLocaleString() : "0";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h3 className="text-gray-500 text-sm font-medium">Total Online Store Visitors</h3>
+          <h3 className="text-gray-500 text-sm font-medium">Total Orders</h3>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-3xl font-bold">45,231</span>
+            <span className="text-3xl font-bold">{loading ? "..." : totalOrders}</span>
             <span className="text-green-500 text-sm font-semibold flex items-center gap-0.5">
-              <TrendingUp size={14} /> +8.4%
+              <TrendingUp size={14} /> +15.2%
             </span>
           </div>
         </div>
@@ -43,52 +47,37 @@ const VisitorsCard = () => {
         ))}
       </div>
 
-      {/* Visitors Over Time Chart (SVG) */}
+      {/* Orders Trend Chart (SVG) */}
       <div className="relative h-48 w-full mb-8">
-        <div className="absolute top-0 left-0 text-[10px] text-gray-400 font-medium">Visitors over time</div>
         <svg viewBox="0 0 400 150" className="w-full h-full mt-4">
           <defs>
-            <linearGradient id="visitorGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+            <linearGradient id="orderGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
             </linearGradient>
           </defs>
           <path
-            d="M0,130 Q40,140 80,100 T160,80 T240,60 T320,90 T400,40"
+            d="M0,100 Q40,80 80,120 T160,90 T240,110 T320,70 T400,50"
             fill="none"
-            stroke="#10b981"
+            stroke="#8b5cf6"
             strokeWidth="3"
             strokeLinecap="round"
           />
           <path
-            d="M0,130 Q40,140 80,100 T160,80 T240,60 T320,90 T400,40 V150 H0 Z"
-            fill="url(#visitorGradient)"
+            d="M0,100 Q40,80 80,120 T160,90 T240,110 T320,70 T400,50 V150 H0 Z"
+            fill="url(#orderGradient)"
           />
-          {/* Grid lines */}
-          <line x1="0" y1="150" x2="400" y2="150" stroke="#f3f4f6" strokeWidth="1" />
-          <line x1="0" y1="100" x2="400" y2="100" stroke="#f3f4f6" strokeWidth="1" />
-          <line x1="0" y1="50" x2="400" y2="50" stroke="#f3f4f6" strokeWidth="1" />
         </svg>
       </div>
 
-      {/* Metrics Summary */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="p-3 bg-gray-50 rounded-xl">
-          <span className="text-xs text-gray-500 block mb-1">Unique Visitors</span>
-          <span className="text-lg font-bold text-gray-900">32,840</span>
-        </div>
-        <div className="p-3 bg-gray-50 rounded-xl">
-          <span className="text-xs text-gray-500 block mb-1">Session Duration</span>
-          <span className="text-lg font-bold text-gray-900">2m 45s</span>
-        </div>
-      </div>
-
       {/* Footer Link */}
-      <button className="mt-auto flex items-center gap-2 text-emerald-600 text-sm font-semibold hover:underline">
-        View Detailed Report <ExternalLink size={14} />
-      </button>
+      <div className="mt-auto flex justify-between items-center border-t border-gray-50 pt-4">
+        <div className="text-xs text-gray-400">Avg. Order Value: <span className="font-bold text-gray-700">₹366</span></div>
+        <button className="flex items-center gap-2 text-violet-600 text-sm font-semibold hover:underline">
+          View All Orders <ExternalLink size={14} />
+        </button>
+      </div>
     </div>
   );
 };
 
-export default VisitorsCard;
