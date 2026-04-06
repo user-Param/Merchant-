@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
-const API_BASE_URL = 'http://localhost:3000/api/v1/analytics';
-const STORE_ID = 'store_001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_ANALYTICS_API_BASE_URL || 'http://localhost:3000/api/v1/analytics';
+const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID || 'store_001';
 
 export function useAnalytics<T>(endpoint: string) {
   const [data, setData] = useState<T | null>(null);
@@ -9,11 +9,13 @@ export function useAnalytics<T>(endpoint: string) {
   const [error, setError] = useState<any>(null);
   
   const retryCount = useRef(0);
+  const retryTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const MAX_RETRIES = 3;
 
   useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
+      if (isMounted) setLoading(true);
       try {
         const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
           headers: {
@@ -36,13 +38,17 @@ export function useAnalytics<T>(endpoint: string) {
         console.error(`Error fetching ${endpoint}:`, err.message);
         if (isMounted) {
           setError(err);
-          // Simple exponential backoff retry for non-400 errors
-          if (retryCount.current < MAX_RETRIES) {
+          const statusMatch = String(err?.message || '').match(/status:\s*(\d+)/i);
+          const statusCode = statusMatch ? Number(statusMatch[1]) : undefined;
+          const shouldRetry = retryCount.current < MAX_RETRIES && (!statusCode || statusCode >= 500);
+
+          if (shouldRetry) {
             retryCount.current += 1;
             const delay = Math.pow(2, retryCount.current) * 1000;
-            setTimeout(() => {
+            retryTimeout.current = setTimeout(() => {
               if (isMounted) fetchData();
             }, delay);
+            return;
           }
         }
       } finally {
@@ -51,7 +57,12 @@ export function useAnalytics<T>(endpoint: string) {
     };
 
     fetchData();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+      if (retryTimeout.current) {
+        clearTimeout(retryTimeout.current);
+      }
+    };
   }, [endpoint]);
 
   return { data, loading, error };

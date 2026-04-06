@@ -1,4 +1,4 @@
-import { Kafka, Consumer } from "kafkajs";
+ import { Kafka, Consumer } from "kafkajs";
 
 const kafka = new Kafka({
   clientId: "merchant-manager",

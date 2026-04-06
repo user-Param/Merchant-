@@ -1,25 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, TrendingUp, MoreHorizontal, ExternalLink, Package, Clock, CheckCircle } from "lucide-react";
+import { TrendingUp, MoreHorizontal, ExternalLink } from "lucide-react";
 import { useAnalytics } from "@/hooks/use-analytics";
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
 
-const OrdersCard = () => {
+const VisitorsCard = () => {
   const [selectedRange, setSelectedRange] = useState("1m");
-  const { data, loading } = useAnalytics<any>("overview");
+  const { data, loading } = useAnalytics<any>("visitors-trend");
 
-  const totalOrders = data?.total_orders ? Number(data.total_orders).toLocaleString() : "0";
+  const totalVisitors = Array.isArray(data)
+    ? data.reduce((sum, row) => sum + Number(row?.visitors ?? 0), 0).toLocaleString()
+    : "0";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h3 className="text-gray-500 text-sm font-medium">Total Orders</h3>
+          <h3 className="text-gray-500 text-sm font-medium">Total Visitors</h3>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-3xl font-bold">{loading ? "..." : totalOrders}</span>
+            <span className="text-3xl font-bold">{loading ? "..." : totalVisitors}</span>
             <span className="text-green-500 text-sm font-semibold flex items-center gap-0.5">
               <TrendingUp size={14} /> +15.2%
             </span>
@@ -47,7 +49,7 @@ const OrdersCard = () => {
         ))}
       </div>
 
-      {/* Orders Trend Chart (SVG) */}
+      {/* Visitors Trend Chart (SVG) */}
       <div className="relative h-48 w-full mb-8">
         <svg viewBox="0 0 400 150" className="w-full h-full mt-4">
           <defs>
@@ -72,12 +74,13 @@ const OrdersCard = () => {
 
       {/* Footer Link */}
       <div className="mt-auto flex justify-between items-center border-t border-gray-50 pt-4">
-        <div className="text-xs text-gray-400">Avg. Order Value: <span className="font-bold text-gray-700">₹366</span></div>
+        <div className="text-xs text-gray-400">Avg. Daily Visitors: <span className="font-bold text-gray-700">{loading ? "..." : totalVisitors}</span></div>
         <button className="flex items-center gap-2 text-violet-600 text-sm font-semibold hover:underline">
-          View All Orders <ExternalLink size={14} />
+          View Visitor Report <ExternalLink size={14} />
         </button>
       </div>
     </div>
   );
 };
 
+export default VisitorsCard;

@@ -3,7 +3,23 @@
 # Exit on error
 set -e
 
+# Load root environment variables for backend runtime
+if [ -f ".env" ]; then
+  set -a
+  source .env
+  set +a
+fi
+
 echo "🚀 Starting Merchant Platform..."
+
+# Ensure old local dev servers don't block ports.
+for PORT in 3000 3001; do
+  PIDS=$(lsof -ti tcp:$PORT || true)
+  if [ -n "$PIDS" ]; then
+    echo "🧹 Freeing port $PORT..."
+    kill $PIDS || true
+  fi
+done
 
 # 1. Start Databases (Postgres, Redis, Kafka)
 echo "📦 Starting Databases with Docker..."
@@ -37,5 +53,5 @@ echo "📡 Backend: http://localhost:3000"
 echo "🌐 Frontend: http://localhost:3001"
 
 # Wait for all processes
-trap "kill $BACKEND_PID $FRONTEND_PID; docker-compose down" EXIT
+trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true; docker-compose down" EXIT
 wait

@@ -1,4 +1,5 @@
 import { query } from '../connection/postgres.client';
+import { pgPool } from '../connection/postgres.client';
 
 export class AnalyticsRepository {
   
@@ -102,46 +103,70 @@ export class AnalyticsRepository {
 
   // CORE: Aggregation logic for Precompute Service
   async aggregatePendingEvents() {
-    const batchSql = `SELECT * FROM events WHERE processed = FALSE LIMIT 500 FOR UPDATE SKIP LOCKED`;
-    const events = await query(batchSql);
-    
-    if (events.rows.length === 0) return 0;
+    const client = await pgPool.connect();
+    try {
+      await client.query('BEGIN');
+      const events = await client.query(
+        `SELECT * FROM events WHERE processed = FALSE ORDER BY id LIMIT 500 FOR UPDATE SKIP LOCKED`,
+      );
 
-    const eventIds = events.rows.map(e => e.id);
-
-    for (const event of events.rows) {
-      const date = new Date(event.timestamp).toISOString().split('T')[0];
-      
-      await query(`
-        INSERT INTO analytics_daily (store_id, date, revenue, orders, page_views)
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (store_id, date) DO UPDATE SET
-          revenue = analytics_daily.revenue + $3,
-          orders = analytics_daily.orders + $4,
-          page_views = analytics_daily.page_views + $5,
-          conversion_rate = CASE WHEN (analytics_daily.page_views + $5) > 0 
-            THEN ((analytics_daily.orders + $4)::DECIMAL / (analytics_daily.page_views + $5)) * 100 
-            ELSE 0 END
-      `, [
-        event.store_id, 
-        date, 
-        event.event_type === 'purchase' ? event.amount : 0,
-        event.event_type === 'purchase' ? 1 : 0,
-        event.event_type === 'page_view' ? 1 : 0
-      ]);
-
-      if (event.product_id) {
-        await query(`
-          INSERT INTO top_products (store_id, product_id, revenue, orders)
-          VALUES ($1, $2, $3, $4)
-          ON CONFLICT (store_id, product_id) DO UPDATE SET
-            revenue = top_products.revenue + $3,
-            orders = top_products.orders + $4
-        `, [event.store_id, event.product_id, event.event_type === 'purchase' ? event.amount : 0, event.event_type === 'purchase' ? 1 : 0]);
+      if (events.rows.length === 0) {
+        await client.query('COMMIT');
+        return 0;
       }
-    }
 
-    await query(`UPDATE events SET processed = TRUE WHERE id = ANY($1)`, [eventIds]);
-    return events.rows.length;
+      const eventIds = events.rows.map(e => e.id);
+
+      for (const event of events.rows) {
+        const date = new Date(event.timestamp).toISOString().split('T')[0];
+        await client.query(
+          `
+          INSERT INTO analytics_daily (store_id, date, revenue, orders, page_views)
+          VALUES ($1, $2, $3, $4, $5)
+          ON CONFLICT (store_id, date) DO UPDATE SET
+            revenue = analytics_daily.revenue + $3,
+            orders = analytics_daily.orders + $4,
+            page_views = analytics_daily.page_views + $5,
+            conversion_rate = CASE WHEN (analytics_daily.page_views + $5) > 0
+              THEN ((analytics_daily.orders + $4)::DECIMAL / (analytics_daily.page_views + $5)) * 100
+              ELSE 0 END
+        `,
+          [
+            event.store_id,
+            date,
+            event.event_type === 'purchase' ? event.amount : 0,
+            event.event_type === 'purchase' ? 1 : 0,
+            event.event_type === 'page_view' ? 1 : 0,
+          ],
+        );
+
+        if (event.product_id) {
+          await client.query(
+            `
+            INSERT INTO top_products (store_id, product_id, revenue, orders)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (store_id, product_id) DO UPDATE SET
+              revenue = top_products.revenue + $3,
+              orders = top_products.orders + $4
+          `,
+            [
+              event.store_id,
+              event.product_id,
+              event.event_type === 'purchase' ? event.amount : 0,
+              event.event_type === 'purchase' ? 1 : 0,
+            ],
+          );
+        }
+      }
+
+      await client.query(`UPDATE events SET processed = TRUE WHERE id = ANY($1)`, [eventIds]);
+      await client.query('COMMIT');
+      return events.rows.length;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }
