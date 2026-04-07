@@ -1,17 +1,32 @@
 "use client";
 
-import { Eye, ShoppingCart, CreditCard, TrendingUp } from "lucide-react";
+import { Eye, ShoppingCart, CreditCard } from "lucide-react";
 import { useAnalytics } from "@/hooks/use-analytics";
 
+interface FunnelData {
+  views?: number;
+  cart_adds?: number;
+  purchases?: number;
+}
+
+interface StatItemProps {
+  label: string;
+  value: string;
+  loading: boolean;
+  icon: React.ElementType;
+  color: string;
+  bgColor: string;
+}
+
 const PerformanceCard = () => {
-  const { data, loading } = useAnalytics<any>("funnel");
+  const { data, loading } = useAnalytics<FunnelData>("funnel");
 
   const views = data?.views ? Number(data.views).toLocaleString() : "0";
   const cartAdds = data?.cart_adds ? Number(data.cart_adds).toLocaleString() : "0";
   const purchases = data?.purchases ? Number(data.purchases).toLocaleString() : "0";
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-gray-900 font-bold">Conversion Performance</h3>
         <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded font-bold uppercase tracking-wider">Real-time</span>
@@ -38,7 +53,7 @@ const PerformanceCard = () => {
   );
 };
 
-const StatItem = ({ label, value, loading, icon: Icon, color, bgColor }: any) => (
+const StatItem = ({ label, value, loading, icon: Icon, color, bgColor }: StatItemProps) => (
   <div className="flex items-center justify-between">
     <div className="flex items-center gap-4">
       <div className={`p-3 ${bgColor} ${color} rounded-xl`}>
@@ -51,7 +66,7 @@ const StatItem = ({ label, value, loading, icon: Icon, color, bgColor }: any) =>
     </div>
     <div className="text-right">
       <span className="text-green-500 text-xs font-bold flex items-center justify-end gap-0.5">
-        <TrendingUp size={12} /> +12%
+        +12%
       </span>
     </div>
   </div>

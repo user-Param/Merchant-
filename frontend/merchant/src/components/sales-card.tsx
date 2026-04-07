@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { TrendingUp, MoreHorizontal, ExternalLink } from "lucide-react";
+import { MoreHorizontal, ExternalLink } from "lucide-react";
 import { useAnalytics } from "@/hooks/use-analytics";
+
+interface OverviewData {
+  total_revenue?: number;
+  avg_conversion?: number;
+}
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
 
@@ -14,13 +19,13 @@ const salesSources = [
 
 const SalesCard = () => {
   const [selectedRange, setSelectedRange] = useState("1m");
-  const { data, loading } = useAnalytics<any>("overview");
+  const { data, loading } = useAnalytics<OverviewData>("overview");
 
   const revenue = data?.total_revenue ? `₹${Number(data.total_revenue).toLocaleString()}` : "₹0";
   const trend = data?.avg_conversion ? `+${Number(data.avg_conversion).toFixed(1)}%` : "+0%";
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
@@ -28,7 +33,7 @@ const SalesCard = () => {
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl font-bold">{loading ? "..." : revenue}</span>
             <span className="text-green-500 text-sm font-semibold flex items-center gap-0.5">
-              <TrendingUp size={14} /> {loading ? "" : trend}
+              {loading ? "" : trend}
             </span>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Users, RotateCcw, TrendingUp, MoreHorizontal, ExternalLink } from "lucide-react";
+import { RotateCcw, TrendingUp, ExternalLink } from "lucide-react";
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
 
@@ -9,7 +9,7 @@ const ReturningCard = () => {
   const [selectedRange, setSelectedRange] = useState("1m");
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>

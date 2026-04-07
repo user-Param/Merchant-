@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { TrendingUp, MoreHorizontal, ExternalLink } from "lucide-react";
+import React, { useState } from "react";
+import { MoreHorizontal, ExternalLink } from "lucide-react";
 import { useAnalytics } from "@/hooks/use-analytics";
+
+interface VisitorData {
+  visitors?: number;
+}
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
 
 const VisitorsCard = () => {
   const [selectedRange, setSelectedRange] = useState("1m");
-  const { data, loading } = useAnalytics<any>("visitors-trend");
+  const { data, loading } = useAnalytics<VisitorData[]>("visitors-trend");
 
   const totalVisitors = Array.isArray(data)
     ? data.reduce((sum, row) => sum + Number(row?.visitors ?? 0), 0).toLocaleString()
@@ -23,7 +27,7 @@ const VisitorsCard = () => {
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl font-bold">{loading ? "..." : totalVisitors}</span>
             <span className="text-green-500 text-sm font-semibold flex items-center gap-0.5">
-              <TrendingUp size={14} /> +15.2%
+              +15.2%
             </span>
           </div>
         </div>

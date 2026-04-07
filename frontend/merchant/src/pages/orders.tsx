@@ -1,34 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-type Order = {
-  id: string;
-  customer: string;
-  status: "pending" | "shipped" | "delivered";
-  total: number;
-  date: string;
-};
+import { useOrders } from "@/hooks/use-api";
 
 const Orders = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulated API call
-    setTimeout(() => {
-      setOrders([
-        { id: "#ORD-001", customer: "Param", status: "delivered", total: 450, date: "2024-03-20" },
-        { id: "#ORD-002", customer: "Aman", status: "pending", total: 120, date: "2024-03-21" },
-        { id: "#ORD-003", customer: "Rahul", status: "shipped", total: 890, date: "2024-03-22" },
-      ]);
-      setLoading(false);
-    }, 600);
-  }, []);
+  const { orders, loading, error, updateStatus } = useOrders();
 
   if (loading) {
     return <div className="p-6">Loading orders...</div>;
   }
+
+  if (error) {
+    return <div className="p-6">Error loading orders</div>;
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "delivered": return "bg-green-100 text-green-700";
+      case "pending": return "bg-yellow-100 text-yellow-700";
+      case "shipped": return "bg-blue-100 text-blue-700";
+      default: return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const cycleStatus = (current: string) => {
+    if (current === "pending") return "shipped";
+    if (current === "shipped") return "delivered";
+    return "delivered";
+  };
 
   return (
     <div className="flex-1 p-6 bg-gray-50 min-h-screen space-y-6">
@@ -43,24 +41,31 @@ const Orders = () => {
               <th>Status</th>
               <th>Total</th>
               <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {orders.map((o) => (
-              <tr key={o.id} className="border-b hover:bg-gray-50 transition">
-                <td className="py-3 font-medium">{o.id}</td>
-                <td>{o.customer}</td>
+              <tr key={String(o.id)} className="border-b hover:bg-gray-50 transition">
+                <td className="py-3 font-medium">{String(o.order_id)}</td>
+                <td>{String(o.customer_name || o.customer_id)}</td>
                 <td>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    o.status === "delivered" ? "bg-green-100 text-green-700" :
-                    o.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-blue-100 text-blue-700"
-                  }`}>
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(o.status)}`}>
                     {o.status.toUpperCase()}
                   </span>
                 </td>
-                <td>₹{o.total}</td>
-                <td>{o.date}</td>
+                <td>₹{Number(o.total)}</td>
+                <td>{String(o.created_at).split('T')[0]}</td>
+                <td>
+                  {o.status !== "delivered" && (
+                    <button
+                      onClick={() => updateStatus(String(o.order_id), cycleStatus(String(o.status)))}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Mark as {cycleStatus(o.status)}
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, TrendingUp, MoreHorizontal, ExternalLink, Package, Clock, CheckCircle } from "lucide-react";
+import { TrendingUp, MoreHorizontal, ExternalLink, Package, Clock, CheckCircle } from "lucide-react";
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
 

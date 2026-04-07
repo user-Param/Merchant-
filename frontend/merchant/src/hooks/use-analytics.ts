@@ -6,7 +6,7 @@ const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID || 'store_001';
 export function useAnalytics<T>(endpoint: string) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<Error | null>(null);
   
   const retryCount = useRef(0);
   const retryTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -25,7 +25,7 @@ export function useAnalytics<T>(endpoint: string) {
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+          throw new Error((errorData as Record<string, unknown>).message ? String((errorData as Record<string, unknown>).message) : `HTTP error! status: ${response.status}`);
         }
         
         const result = await response.json();
@@ -34,11 +34,11 @@ export function useAnalytics<T>(endpoint: string) {
           setError(null);
           retryCount.current = 0;
         }
-      } catch (err: any) {
-        console.error(`Error fetching ${endpoint}:`, err.message);
+      } catch (err) {
+        console.error(`Error fetching ${endpoint}:`, err instanceof Error ? err.message : String(err));
         if (isMounted) {
-          setError(err);
-          const statusMatch = String(err?.message || '').match(/status:\s*(\d+)/i);
+          setError(err instanceof Error ? err : new Error(String(err)));
+          const statusMatch = String(err instanceof Error ? err.message : '').match(/status:\s*(\d+)/i);
           const statusCode = statusMatch ? Number(statusMatch[1]) : undefined;
           const shouldRetry = retryCount.current < MAX_RETRIES && (!statusCode || statusCode >= 500);
 
@@ -46,7 +46,7 @@ export function useAnalytics<T>(endpoint: string) {
             retryCount.current += 1;
             const delay = Math.pow(2, retryCount.current) * 1000;
             retryTimeout.current = setTimeout(() => {
-              if (isMounted) fetchData();
+              if (isMounted) void fetchData();
             }, delay);
             return;
           }
@@ -56,7 +56,7 @@ export function useAnalytics<T>(endpoint: string) {
       }
     };
 
-    fetchData();
+    void fetchData();
     return () => {
       isMounted = false;
       if (retryTimeout.current) {

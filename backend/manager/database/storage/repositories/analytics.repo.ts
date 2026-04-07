@@ -57,11 +57,26 @@ export class AnalyticsRepository {
 
   // 5. Customer Retention (for ReturningCard)
   async getRetentionStats(storeId: string) {
-    // Simulated retention logic - in a real app, this would query a dedicated retention table
+    const sql = `
+      WITH customer_orders AS (
+        SELECT customer_id, COUNT(*) as order_count, SUM(total) as total_spent
+        FROM orders
+        WHERE store_id = $1
+        GROUP BY customer_id
+      )
+      SELECT 
+        COUNT(*) as total_customers,
+        COUNT(CASE WHEN order_count > 1 THEN 1 END) as returning_customers,
+        ROUND(COUNT(CASE WHEN order_count > 1 THEN 1 END)::DECIMAL / NULLIF(COUNT(*), 0) * 100, 2) as retention_rate,
+        COALESCE(AVG(total_spent), 0) as avg_ltv
+      FROM customer_orders
+    `;
+    const result = await query(sql, [storeId]);
+    const row = result.rows[0];
     return {
-      returning_customers: 12402,
-      retention_rate: 24.5,
-      avg_ltv: 4250
+      returning_customers: parseInt(row.returning_customers) || 0,
+      retention_rate: parseFloat(row.retention_rate) || 0,
+      avg_ltv: parseFloat(row.avg_ltv) || 0
     };
   }
 
@@ -94,10 +109,23 @@ export class AnalyticsRepository {
 
   // 8. Campaign Impact (for CampaignCard)
   async getCampaignStats(storeId: string) {
-    // Simulated campaign data
+    const sql = `
+      SELECT 
+        DATE_TRUNC('day', created_at) as campaign_date,
+        SUM(total) as revenue,
+        COUNT(*) as orders
+      FROM orders
+      WHERE store_id = $1 AND created_at >= (CURRENT_DATE - INTERVAL '30 days')
+      GROUP BY DATE_TRUNC('day', created_at)
+      ORDER BY revenue DESC
+      LIMIT 10
+    `;
+    const result = await query(sql, [storeId]);
+    const totalRevenue = result.rows.reduce((sum, r) => sum + parseFloat(r.revenue), 0);
+    const totalOrders = result.rows.reduce((sum, r) => sum + parseInt(r.orders), 0);
+    
     return [
-      { name: "Summer Flash Sale", revenue: 42500, roi: 4.2, reach: 12400 },
-      { name: "Insta Influencer Pack", revenue: 18200, roi: 3.1, reach: 8200 }
+      { name: "Direct Sales", revenue: totalRevenue, roi: totalRevenue > 0 ? 1 : 0, reach: totalOrders }
     ];
   }
 

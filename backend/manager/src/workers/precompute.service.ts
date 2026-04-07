@@ -7,20 +7,24 @@ export class PrecomputeWorker {
 
   start() {
     console.log('Precompute Worker Started (Interval: 10s)');
-    setInterval(async () => {
-      if (this.isRunning) return;
-      
-      this.isRunning = true;
-      try {
-        const processedCount = await repo.aggregatePendingEvents();
-        if (processedCount > 0) {
-          console.log(`Precompute Worker: Processed ${processedCount} events`);
-        }
-      } catch (error) {
-        console.error('Precompute Worker Error:', error);
-      } finally {
-        this.isRunning = false;
-      }
+    setInterval((): void => {
+      void this.processEvents();
     }, 10000);
+  }
+
+  private async processEvents(): Promise<void> {
+    if (this.isRunning) return;
+
+    this.isRunning = true;
+    try {
+      const processedCount = await repo.aggregatePendingEvents();
+      if (processedCount > 0) {
+        console.log(`Precompute Worker: Processed ${processedCount} events`);
+      }
+    } catch (error) {
+      console.error('Precompute Worker Error:', error);
+    } finally {
+      this.isRunning = false;
+    }
   }
 }

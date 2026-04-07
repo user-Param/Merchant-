@@ -34,5 +34,8 @@ export const cache = {
   },
   del: async (key: string) => {
     await redisClient.del(key);
+  },
+  keys: async (pattern: string) => {
+    return await redisClient.keys(pattern);
   }
 };

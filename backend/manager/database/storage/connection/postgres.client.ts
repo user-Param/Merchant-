@@ -9,7 +9,7 @@ export const pgPool = new Pool({
   database: process.env.DB_NAME || 'merchant_db',
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
 });
 
 let lastDbErrorTime = 0;
@@ -18,7 +18,11 @@ const DB_ERROR_LOG_INTERVAL = 5000;
 pgPool.on('error', (err) => {
   const now = Date.now();
   if (now - lastDbErrorTime > DB_ERROR_LOG_INTERVAL) {
-    console.error('Unexpected error on idle client', err.message || err);
+    if ((err as any).code === '28000') {
+      console.warn('Database auth warning (role does not exist):', err.message || err);
+    } else {
+      console.error('Unexpected error on idle client', err.message || err);
+    }
     lastDbErrorTime = now;
   }
 });

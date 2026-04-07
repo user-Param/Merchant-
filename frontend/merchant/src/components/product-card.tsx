@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { 
   Package, 
-  TrendingUp, 
   Eye, 
   ShoppingCart, 
   MousePointerClick, 

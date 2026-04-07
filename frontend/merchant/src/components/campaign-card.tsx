@@ -1,6 +1,6 @@
 "use client";
 
-import { Megaphone, TrendingUp, Target, Zap, MoreHorizontal, ExternalLink } from "lucide-react";
+import { Megaphone, Zap, ExternalLink } from "lucide-react";
 
 const campaigns = [
   {
