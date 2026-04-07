@@ -16,7 +16,7 @@ const menuItems = [
 
 const Sidebar = ({ activePanel, setActivePanel }: { activePanel: string, setActivePanel: (panel: string) => void }) => {
   return (
-    <aside className="h-screen w-64 bg-white border-r p-4">
+    <aside className="h-screen w-64 bg-white border-r border-black/20 p-4">
       <h2 className="text-xl font-bold mb-6">Control Panel</h2>
 
       <div className="flex flex-col gap-2">

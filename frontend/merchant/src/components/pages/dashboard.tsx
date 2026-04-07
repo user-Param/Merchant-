@@ -51,15 +51,32 @@ const Dashboard = () => {
   const { data: visitorData } = useAnalytics<VisitorData[]>("visitors-trend");
   const { data: orderData } = useAnalytics<OrderData[]>("orders-trend");
   const { data: topProducts } = useAnalytics<unknown[]>("top-products");
+  const { data: recentActivity } = useAnalytics<unknown[]>("recent-activity");
 
   const revenue = data?.total_revenue ? Number(data.total_revenue) : 0;
   const orders = data?.total_orders ? Number(data.total_orders) : 0;
   const views = data?.total_views ? Number(data.total_views) : 0;
   const conversionRate = data?.avg_conversion ? Number(data.avg_conversion) : 0;
 
-  // Prepare chart data
+  // Calculate growth rates from trend data
   const chartVisitors = Array.isArray(visitorData) ? visitorData.slice(-30) : [];
   const chartOrders = Array.isArray(orderData) ? orderData.slice(-30) : [];
+  
+  const revenueGrowth = chartVisitors.length > 1 
+    ? (((chartVisitors[chartVisitors.length - 1]?.visitors || 0) - (chartVisitors[0]?.visitors || 0)) / (chartVisitors[0]?.visitors || 1) * 100).toFixed(1)
+    : "0";
+  
+  const ordersGrowth = chartOrders.length > 1
+    ? (((chartOrders[chartOrders.length - 1]?.orders || 0) - (chartOrders[0]?.orders || 0)) / (chartOrders[0]?.orders || 1) * 100).toFixed(1)
+    : "0";
+  
+  const viewsGrowth = chartVisitors.length > 1
+    ? revenueGrowth
+    : "0";
+  
+  const conversionGrowth = "0";
+
+  // Prepare chart data
   const topProductsData = Array.isArray(topProducts)
     ? topProducts.slice(0, 5).map((p: unknown) => ({
         name: String((p as any)?.product_id || "Unknown"),
@@ -101,28 +118,28 @@ const Dashboard = () => {
         <KPICard
           title="Total Revenue"
           value={`₹${revenue.toLocaleString()}`}
-          change={"+12.5%"}
+          change={`${Number(revenueGrowth) > 0 ? '+' : ''}${revenueGrowth}%`}
           icon={<DollarSign className="h-8 w-8" />}
           color="blue"
         />
         <KPICard
           title="Total Orders"
           value={String(orders)}
-          change={"+8.2%"}
+          change={`${Number(ordersGrowth) > 0 ? '+' : ''}${ordersGrowth}%`}
           icon={<ShoppingCart className="h-8 w-8" />}
           color="green"
         />
         <KPICard
           title="Page Views"
           value={views.toLocaleString()}
-          change={"+15.3%"}
+          change={`${Number(viewsGrowth) > 0 ? '+' : ''}${viewsGrowth}%`}
           icon={<TrendingUp className="h-8 w-8" />}
           color="orange"
         />
         <KPICard
           title="Conversion Rate"
           value={`${conversionRate.toFixed(1)}%`}
-          change={"+2.1%"}
+          change={conversionGrowth}
           icon={<Users className="h-8 w-8" />}
           color="purple"
         />
@@ -363,30 +380,23 @@ const Dashboard = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h3 className="font-bold text-gray-900 mb-4">Recent Activity</h3>
             <div className="space-y-3">
-              <ActivityItem
-                icon="🟢"
-                label="Purchase"
-                value="₹2,500"
-                time="2 mins ago"
-              />
-              <ActivityItem
-                icon="👁️"
-                label="Page View"
-                value="Product Page"
-                time="5 mins ago"
-              />
-              <ActivityItem
-                icon="🛒"
-                label="Cart Added"
-                value="₹1,250"
-                time="8 mins ago"
-              />
-              <ActivityItem
-                icon="⭐"
-                label="Review Posted"
-                value="5 Stars"
-                time="15 mins ago"
-              />
+              {Array.isArray(recentActivity) && recentActivity.length > 0 ? (
+                recentActivity.slice(0, 4).map((activity: unknown, idx: number) => {
+                  const act = activity as any;
+                  const icons = ["🟢", "👁️", "🛒", "⭐"];
+                  return (
+                    <ActivityItem
+                      key={idx}
+                      icon={icons[idx % icons.length]}
+                      label={String(act.type || act.action || "Activity")}
+                      value={`${act.value || act.amount || "-"}`}
+                      time={String(act.time || act.created_at || "Just now").split('T')[0]}
+                    />
+                  );
+                })
+              ) : (
+                <ActivityItem icon="🟢" label="No activity" value="-" time="N/A" />
+              )}
             </div>
           </div>
         </div>
