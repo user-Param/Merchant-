@@ -7,7 +7,6 @@ import OrdersCard from "@/components/orders-card";
 import ProductCard from "@/components/product-card";
 import ReturningCard from "@/components/returning-card";
 import PerformanceCard from "@/components/performance-card";
-import CampaignCard from "@/components/campaign-card";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { useProducts } from "@/hooks/use-api";
 import {
@@ -322,8 +321,6 @@ const Dashboard = () => {
             <OrdersCard />
             <ProductCard />
           </div>
-
-          <CampaignCard />
         </div>
 
         {/* Right Column - Sidebar */}

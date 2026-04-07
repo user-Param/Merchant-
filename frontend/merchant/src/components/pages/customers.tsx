@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useCustomers } from "@/hooks/use-api";
 import { useError } from "@/context/error-context";
+import { Search, Trash2 } from "lucide-react";
 
 const Customers = () => {
-  const { customers, loading, error, createCustomer } = useCustomers();
+  const { customers, loading, error, createCustomer, deleteCustomer } = useCustomers();
   const { showError } = useError();
   const [isAdding, setIsAdding] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [newCustomer, setNewCustomer] = useState({ name: "", email: "", phone: "" });
 
   if (loading) {
@@ -19,6 +21,31 @@ const Customers = () => {
   }
 
   const handleAdd = async () => {
+    if (!newCustomer.name.trim()) {
+      showError('Name is required');
+      return;
+    }
+    if (!newCustomer.email.trim()) {
+      showError('Email is required');
+      return;
+    }
+    if (!newCustomer.phone.trim()) {
+      showError('Phone number is required');
+      return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newCustomer.email)) {
+      showError('Please enter a valid email address');
+      return;
+    }
+    
+    const phoneRegex = /^[0-9\-\+\(\)\s]{10,}$/;
+    if (!phoneRegex.test(newCustomer.phone.replace(/\s/g, ''))) {
+      showError('Please enter a valid phone number');
+      return;
+    }
+
     try {
       await createCustomer(newCustomer);
       setIsAdding(false);
@@ -28,13 +55,29 @@ const Customers = () => {
     }
   };
 
+  const handleDelete = async (customerId: string) => {
+    if (confirm('Are you sure you want to delete this customer?')) {
+      try {
+        await deleteCustomer(String(customerId));
+      } catch (err) {
+        showError(err instanceof Error ? err.message : 'Failed to delete customer');
+      }
+    }
+  };
+
+  const filteredCustomers = customers.filter(c => 
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(c.phone).includes(searchQuery)
+  );
+
   return (
     <div className="flex-1 p-6 bg-gray-50 min-h-screen space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Customers</h1>
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
         >
           {isAdding ? "Cancel" : "Add Customer"}
         </button>
@@ -43,24 +86,35 @@ const Customers = () => {
       {isAdding && (
         <div className="bg-white rounded-xl shadow p-4 space-y-4">
           <input
-            placeholder="Name"
-            className="w-full border p-2 rounded"
+            type="text"
+            placeholder="Name *"
+            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={newCustomer.name}
             onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
           />
           <input
-            placeholder="Email"
-            className="w-full border p-2 rounded"
+            type="email"
+            placeholder="Email *"
+            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={newCustomer.email}
             onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
           />
           <input
-            placeholder="Phone"
-            className="w-full border p-2 rounded"
+            type="tel"
+            placeholder="Phone *"
+            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={newCustomer.phone}
             onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
           />
-          <button onClick={handleAdd} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          <button 
+            onClick={handleAdd} 
+            disabled={!newCustomer.name.trim() || !newCustomer.email.trim() || !newCustomer.phone.trim()}
+            className={`w-full ${
+              newCustomer.name.trim() && newCustomer.email.trim() && newCustomer.phone.trim()
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-gray-400 cursor-not-allowed'
+            } text-white px-4 py-2 rounded transition`}
+          >
             Save Customer
           </button>
         </div>
@@ -78,8 +132,21 @@ const Customers = () => {
         />
       </div>
 
+      <div className="bg-white rounded-xl shadow p-4 space-y-4">
+        <div className="flex items-center gap-2 border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500">
+          <Search size={18} className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or phone..."
+            className="w-full outline-none text-sm"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
-        <h2 className="font-semibold mb-4">Customer List</h2>
+        <h2 className="font-semibold mb-4">Customer List ({filteredCustomers.length})</h2>
 
         <table className="w-full text-left border-collapse">
           <thead>
@@ -89,11 +156,12 @@ const Customers = () => {
               <th>Phone</th>
               <th>Orders</th>
               <th>Spent</th>
+              <th>Action</th>
             </tr>
           </thead>
 
           <tbody>
-            {customers.map((c) => (
+            {filteredCustomers.map((c) => (
               <tr
                 key={String(c.id)}
                 className="border-b hover:bg-gray-50 transition"
@@ -103,10 +171,25 @@ const Customers = () => {
                 <td>{String(c.phone || "-")}</td>
                 <td>{Number(c.total_orders) || 0}</td>
                 <td>₹{Number(c.total_spent) || 0}</td>
+                <td>
+                  <button
+                    onClick={() => handleDelete(String(c.id))}
+                    className="text-red-600 hover:text-red-800 flex items-center gap-1 transition"
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {filteredCustomers.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            {searchQuery ? "No customers found matching your search" : "No customers yet"}
+          </div>
+        )}
       </div>
     </div>
   );

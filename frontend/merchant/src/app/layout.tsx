@@ -1,5 +1,6 @@
 import "./globals.css";
 import { ErrorProvider } from "@/context/error-context";
+import { AuthProvider } from "@/context/auth-context";
 import { ErrorModal } from "@/components/error-modal";
 
 export default function RootLayout({
@@ -10,10 +11,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ErrorProvider>
-          <ErrorModal />
-          {children}
-        </ErrorProvider>
+        <AuthProvider>
+          <ErrorProvider>
+            <ErrorModal />
+            {children}
+          </ErrorProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -27,6 +27,23 @@ const Products = () => {
   }
 
   const handleAdd = async () => {
+    if (!newProduct.name.trim()) {
+      showError('Product name is required');
+      return;
+    }
+    if (!newProduct.category.trim()) {
+      showError('Category is required');
+      return;
+    }
+    if (newProduct.price <= 0) {
+      showError('Price must be greater than 0');
+      return;
+    }
+    if (newProduct.stock < 0) {
+      showError('Stock cannot be negative');
+      return;
+    }
+
     try {
       await createProduct(newProduct);
       setIsAdding(false);
@@ -59,34 +76,44 @@ const Products = () => {
       {isAdding && (
         <div className="bg-white rounded-xl shadow p-4 space-y-4">
           <input
-            placeholder="Product Name"
-            className="w-full border p-2 rounded"
+            type="text"
+            placeholder="Product Name *"
+            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={newProduct.name}
             onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
           />
           <input
-            placeholder="Category"
-            className="w-full border p-2 rounded"
+            type="text"
+            placeholder="Category *"
+            className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={newProduct.category}
             onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
           />
           <div className="flex gap-4">
             <input
               type="number"
-              placeholder="Price"
-              className="w-full border p-2 rounded"
-              value={newProduct.price}
-              onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) })}
+              placeholder="Price *"
+              className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={newProduct.price || ''}
+              onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value ? Number(e.target.value) : 0 })}
             />
             <input
               type="number"
-              placeholder="Stock"
-              className="w-full border p-2 rounded"
-              value={newProduct.stock}
-              onChange={(e) => setNewProduct({ ...newProduct, stock: Number(e.target.value) })}
+              placeholder="Stock *"
+              className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={newProduct.stock || ''}
+              onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value ? Number(e.target.value) : 0 })}
             />
           </div>
-          <button onClick={handleAdd} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          <button 
+            onClick={handleAdd} 
+            disabled={!newProduct.name.trim() || !newProduct.category.trim() || newProduct.price <= 0 || newProduct.stock < 0}
+            className={`w-full ${
+              newProduct.name.trim() && newProduct.category.trim() && newProduct.price > 0 && newProduct.stock >= 0
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-gray-400 cursor-not-allowed'
+            } text-white px-4 py-2 rounded transition`}
+          >
             Save Product
           </button>
         </div>

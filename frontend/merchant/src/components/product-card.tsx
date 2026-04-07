@@ -9,11 +9,32 @@ import {
   MoreHorizontal, 
   ExternalLink 
 } from "lucide-react";
+import { useAnalytics } from "@/hooks/use-analytics";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
 
 const ProductCard = () => {
   const [selectedRange, setSelectedRange] = useState("1m");
+  const { data: topProducts, loading } = useAnalytics<unknown[]>("top-products");
+
+  // Prepare chart data from top products
+  const chartData = Array.isArray(topProducts)
+    ? topProducts.slice(0, 6).map((p: unknown) => ({
+        name: String((p as any)?.product_id || "Unknown").replace("prod_", "P"),
+        revenue: Number((p as any)?.revenue || 0),
+      }))
+    : [];
+
+  const totalRevenue = chartData.reduce((sum, item) => sum + item.revenue, 0);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
@@ -24,35 +45,16 @@ const ProductCard = () => {
             <Package size={32} />
           </div>
           <div>
-            <h3 className="text-gray-900 font-bold text-lg">Premium Wireless Headphones</h3>
-            <p className="text-gray-500 text-sm">Electronics • SKU: WH-1000XM4</p>
+            <h3 className="text-gray-900 font-bold text-lg">Top Products</h3>
+            <p className="text-gray-500 text-sm">Revenue by product • Last 30 days</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">In Stock: 42</span>
-              <span className="text-gray-400 text-xs">₹2,500 / unit</span>
+              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full uppercase">Revenue: ₹{totalRevenue.toLocaleString()}</span>
             </div>
           </div>
         </div>
         <button className="text-gray-400 hover:text-gray-600 transition-colors">
           <MoreHorizontal size={20} />
         </button>
-      </div>
-
-      {/* Main Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div>
-          <span className="text-gray-400 text-[10px] font-bold uppercase tracking-wider block mb-1">Total Sales</span>
-          <div className="flex items-baseline gap-1">
-            <span className="text-xl font-bold text-gray-900">₹84,500</span>
-          </div>
-        </div>
-        <div>
-          <span className="text-gray-400 text-[10px] font-bold uppercase tracking-wider block mb-1">Items Sold</span>
-          <span className="text-xl font-bold text-gray-900">34</span>
-        </div>
-        <div>
-          <span className="text-gray-400 text-[10px] font-bold uppercase tracking-wider block mb-1">Conversion</span>
-          <span className="text-xl font-bold text-gray-900">4.2%</span>
-        </div>
       </div>
 
       {/* Time Range Selector */}
@@ -72,28 +74,26 @@ const ProductCard = () => {
         ))}
       </div>
 
-      {/* Performance Chart (SVG) */}
-      <div className="relative h-40 w-full mb-8">
-        <div className="absolute top-0 left-0 text-[10px] text-gray-400 font-medium uppercase tracking-wider">Product Performance</div>
-        <svg viewBox="0 0 400 150" className="w-full h-full mt-4">
-          <defs>
-            <linearGradient id="productGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0,110 Q40,90 80,100 T160,60 T240,80 T320,40 T400,20"
-            fill="none"
-            stroke="#3b82f6"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-          <path
-            d="M0,110 Q40,90 80,100 T160,60 T240,80 T320,40 T400,20 V150 H0 Z"
-            fill="url(#productGradient)"
-          />
-        </svg>
+      {/* Top Products Bar Chart */}
+      <div className="h-44 w-full mb-8">
+        {chartData.length > 0 && !loading ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={30} />
+              <Tooltip
+                contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", borderRadius: "8px" }}
+                formatter={(value) => `₹${value.toLocaleString()}`}
+              />
+              <Bar dataKey="revenue" fill="#10b981" radius={[0, 8, 8, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="w-full h-full bg-gray-50 rounded-lg flex items-center justify-center">
+            <p className="text-gray-400">Loading chart...</p>
+          </div>
+        )}
       </div>
 
       {/* Additional Metrics */}

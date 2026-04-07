@@ -2,8 +2,33 @@
 
 import { useState } from "react";
 import { RotateCcw, TrendingUp, ExternalLink } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
+
+// Sample returning customer data
+const returningCustomerData = [
+  { date: "Jan 1", rate: 15 },
+  { date: "Jan 8", rate: 18 },
+  { date: "Jan 15", rate: 22 },
+  { date: "Jan 22", rate: 25 },
+  { date: "Jan 29", rate: 28 },
+  { date: "Feb 5", rate: 26 },
+  { date: "Feb 12", rate: 32 },
+  { date: "Feb 19", rate: 35 },
+  { date: "Feb 26", rate: 38 },
+  { date: "Mar 5", rate: 40 },
+  { date: "Mar 12", rate: 42 },
+  { date: "Mar 19", rate: 45 },
+];
 
 const ReturningCard = () => {
   const [selectedRange, setSelectedRange] = useState("1m");
@@ -43,35 +68,41 @@ const ReturningCard = () => {
         ))}
       </div>
 
-      {/* Chart (SVG) */}
-      <div className="relative h-48 w-full mb-8">
-        <div className="absolute top-0 left-0 text-[10px] text-gray-400 font-medium uppercase tracking-wider">Retention rate</div>
-        <svg viewBox="0 0 400 150" className="w-full h-full mt-4">
-          <defs>
-            <linearGradient id="returningGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0,120 Q60,100 100,110 T180,70 T260,90 T340,40 T400,30"
-            fill="none"
-            stroke="#3b82f6"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-          <path
-            d="M0,120 Q60,100 100,110 T180,70 T260,90 T340,40 T400,30 V150 H0 Z"
-            fill="url(#returningGradient)"
-          />
-        </svg>
+      {/* Area Chart */}
+      <div className="h-48 w-full mb-8">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={returningCustomerData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#999" />
+            <YAxis hide />
+            <Tooltip
+              contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", borderRadius: "8px" }}
+              formatter={(value) => [`${value}%`, "Retention Rate"]}
+            />
+            <Area
+              type="monotone"
+              dataKey="rate"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorRate)"
+              isAnimationActive={true}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="space-y-1">
           <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Return Rate</span>
-          <p className="text-lg font-bold text-gray-900">24.5%</p>
+          <p className="text-lg font-bold text-gray-900">45%</p>
         </div>
         <div className="space-y-1">
           <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Avg. LTV</span>

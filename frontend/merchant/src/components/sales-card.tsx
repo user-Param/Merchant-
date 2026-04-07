@@ -3,10 +3,24 @@
 import { useState } from "react";
 import { MoreHorizontal, ExternalLink } from "lucide-react";
 import { useAnalytics } from "@/hooks/use-analytics";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface OverviewData {
   total_revenue?: number;
   avg_conversion?: number;
+}
+
+interface OrderData {
+  date: string;
+  orders: number;
 }
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
@@ -20,9 +34,18 @@ const salesSources = [
 const SalesCard = () => {
   const [selectedRange, setSelectedRange] = useState("1m");
   const { data, loading } = useAnalytics<OverviewData>("overview");
+  const { data: orderData } = useAnalytics<OrderData[]>("orders-trend");
 
   const revenue = data?.total_revenue ? `₹${Number(data.total_revenue).toLocaleString()}` : "₹0";
   const trend = data?.avg_conversion ? `+${Number(data.avg_conversion).toFixed(1)}%` : "+0%";
+
+  // Prepare chart data from orders trend (last 14 days)
+  const chartData = Array.isArray(orderData)
+    ? orderData.slice(-14).map((d) => ({
+        date: new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        revenue: Math.round(Number((d as any).orders || 0) * 1500),
+      }))
+    : [];
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -59,27 +82,26 @@ const SalesCard = () => {
         ))}
       </div>
 
-      {/* Simplified Chart Area (SVG) */}
-      <div className="relative h-48 w-full mb-8">
-        <svg viewBox="0 0 400 150" className="w-full h-full">
-          <defs>
-            <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M0,120 Q50,110 80,90 T160,70 T240,100 T320,50 T400,30"
-            fill="none"
-            stroke="#3b82f6"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-          <path
-            d="M0,120 Q50,110 80,90 T160,70 T240,100 T320,50 T400,30 V150 H0 Z"
-            fill="url(#gradient)"
-          />
-        </svg>
+      {/* Bar Chart */}
+      <div className="h-48 w-full mb-8">
+        {chartData.length > 0 && !loading ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#999" />
+              <YAxis hide />
+              <Tooltip
+                contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", borderRadius: "8px" }}
+                formatter={(value) => `₹${value.toLocaleString()}`}
+              />
+              <Bar dataKey="revenue" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="w-full h-full bg-gray-50 rounded-lg flex items-center justify-center">
+            <p className="text-gray-400">Loading chart...</p>
+          </div>
+        )}
       </div>
 
       {/* Sales Sources */}

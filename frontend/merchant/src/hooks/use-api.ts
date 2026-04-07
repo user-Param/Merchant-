@@ -184,7 +184,19 @@ export function useCustomers() {
     await fetchCustomers();
   };
 
-  return { customers, loading, error, createCustomer, refetch: fetchCustomers };
+  const deleteCustomer = async (customerId: string) => {
+    const response = await fetch(`${API_BASE_URL}/customers/${customerId}`, {
+      method: 'DELETE',
+      headers: { 'x-store-id': STORE_ID },
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error((errorData as Record<string, unknown>).message ? String((errorData as Record<string, unknown>).message) : 'Failed to delete customer');
+    }
+    await fetchCustomers();
+  };
+
+  return { customers, loading, error, createCustomer, deleteCustomer, refetch: fetchCustomers };
 }
 
 export function useAuth() {
