@@ -59,7 +59,10 @@ export function useProducts() {
       headers: { 'Content-Type': 'application/json', 'x-store-id': STORE_ID },
       body: JSON.stringify(product),
     });
-    if (!response.ok) throw new Error('Failed to create product');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error((errorData as Record<string, unknown>).message ? String((errorData as Record<string, unknown>).message) : 'Failed to create product');
+    }
     await fetchProducts();
   };
 
@@ -69,7 +72,10 @@ export function useProducts() {
       headers: { 'Content-Type': 'application/json', 'x-store-id': STORE_ID },
       body: JSON.stringify(product),
     });
-    if (!response.ok) throw new Error('Failed to update product');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error((errorData as Record<string, unknown>).message ? String((errorData as Record<string, unknown>).message) : 'Failed to update product');
+    }
     await fetchProducts();
   };
 
@@ -78,7 +84,10 @@ export function useProducts() {
       method: 'DELETE',
       headers: { 'x-store-id': STORE_ID },
     });
-    if (!response.ok) throw new Error('Failed to delete product');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error((errorData as Record<string, unknown>).message ? String((errorData as Record<string, unknown>).message) : 'Failed to delete product');
+    }
     await fetchProducts();
   };
 
@@ -115,7 +124,10 @@ export function useOrders() {
       headers: { 'Content-Type': 'application/json', 'x-store-id': STORE_ID },
       body: JSON.stringify(order),
     });
-    if (!response.ok) throw new Error('Failed to create order');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error((errorData as Record<string, unknown>).message ? String((errorData as Record<string, unknown>).message) : 'Failed to create order');
+    }
     await fetchOrders();
   };
 
@@ -125,7 +137,10 @@ export function useOrders() {
       headers: { 'Content-Type': 'application/json', 'x-store-id': STORE_ID },
       body: JSON.stringify({ status }),
     });
-    if (!response.ok) throw new Error('Failed to update order status');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error((errorData as Record<string, unknown>).message ? String((errorData as Record<string, unknown>).message) : 'Failed to update order status');
+    }
     await fetchOrders();
   };
 
@@ -162,7 +177,10 @@ export function useCustomers() {
       headers: { 'Content-Type': 'application/json', 'x-store-id': STORE_ID },
       body: JSON.stringify(customer),
     });
-    if (!response.ok) throw new Error('Failed to create customer');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error((errorData as Record<string, unknown>).message ? String((errorData as Record<string, unknown>).message) : 'Failed to create customer');
+    }
     await fetchCustomers();
   };
 

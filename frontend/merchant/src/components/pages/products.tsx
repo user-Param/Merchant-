@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useProducts } from "@/hooks/use-api";
+import { useError } from "@/context/error-context";
 
 interface Product {
   product_id: string;
@@ -13,6 +14,7 @@ interface Product {
 
 const Products = () => {
   const { products, loading, error, createProduct, deleteProduct } = useProducts();
+  const { showError } = useError();
   const [isAdding, setIsAdding] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: "", category: "", price: 0, stock: 0 });
 
@@ -25,9 +27,21 @@ const Products = () => {
   }
 
   const handleAdd = async () => {
-    await createProduct(newProduct);
-    setIsAdding(false);
-    setNewProduct({ name: "", category: "", price: 0, stock: 0 });
+    try {
+      await createProduct(newProduct);
+      setIsAdding(false);
+      setNewProduct({ name: "", category: "", price: 0, stock: 0 });
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to create product');
+    }
+  };
+
+  const handleDelete = async (productId: string) => {
+    try {
+      await deleteProduct(productId);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to delete product');
+    }
   };
 
   return (
@@ -98,7 +112,7 @@ const Products = () => {
                 <td>{Number(p.stock)} units</td>
                 <td>
                   <button
-                    onClick={() => deleteProduct(String(p.product_id))}
+                    onClick={() => handleDelete(String(p.product_id))}
                     className="text-red-600 hover:text-red-800"
                   >
                     Delete

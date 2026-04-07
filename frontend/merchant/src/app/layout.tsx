@@ -1,4 +1,6 @@
 import "./globals.css";
+import { ErrorProvider } from "@/context/error-context";
+import { ErrorModal } from "@/components/error-modal";
 
 export default function RootLayout({
   children,
@@ -7,7 +9,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ErrorProvider>
+          <ErrorModal />
+          {children}
+        </ErrorProvider>
+      </body>
     </html>
   );
 }

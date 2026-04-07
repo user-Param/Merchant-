@@ -1,9 +1,11 @@
 "use client";
 
 import { useOrders } from "@/hooks/use-api";
+import { useError } from "@/context/error-context";
 
 const Orders = () => {
   const { orders, loading, error, updateStatus } = useOrders();
+  const { showError } = useError();
 
   if (loading) {
     return <div className="p-6">Loading orders...</div>;
@@ -26,6 +28,14 @@ const Orders = () => {
     if (current === "pending") return "shipped";
     if (current === "shipped") return "delivered";
     return "delivered";
+  };
+
+  const handleStatusUpdate = async (orderId: string, status: string) => {
+    try {
+      await updateStatus(orderId, status);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to update order status');
+    }
   };
 
   return (
@@ -59,7 +69,7 @@ const Orders = () => {
                 <td>
                   {o.status !== "delivered" && (
                     <button
-                      onClick={() => updateStatus(String(o.order_id), cycleStatus(String(o.status)))}
+                      onClick={() => handleStatusUpdate(String(o.order_id), cycleStatus(String(o.status)))}
                       className="text-blue-600 hover:text-blue-800 text-sm"
                     >
                       Mark as {cycleStatus(o.status)}

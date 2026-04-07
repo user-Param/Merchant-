@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useCustomers } from "@/hooks/use-api";
+import { useError } from "@/context/error-context";
 
 const Customers = () => {
   const { customers, loading, error, createCustomer } = useCustomers();
+  const { showError } = useError();
   const [isAdding, setIsAdding] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: "", email: "", phone: "" });
 
@@ -17,9 +19,13 @@ const Customers = () => {
   }
 
   const handleAdd = async () => {
-    await createCustomer(newCustomer);
-    setIsAdding(false);
-    setNewCustomer({ name: "", email: "", phone: "" });
+    try {
+      await createCustomer(newCustomer);
+      setIsAdding(false);
+      setNewCustomer({ name: "", email: "", phone: "" });
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to create customer');
+    }
   };
 
   return (
