@@ -135,7 +135,7 @@ VALUES
   ('store_001', NOW()::DATE, 199.99, 0, 4, 25.00)
 ON CONFLICT (store_id, date) DO NOTHING;
 
--- Insert Top Products data
+
 INSERT INTO top_products (store_id, product_id, revenue, orders)
 VALUES
   ('store_001', 'prod_001', 1199.94, 6),

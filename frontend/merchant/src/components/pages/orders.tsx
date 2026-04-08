@@ -14,7 +14,7 @@ const Orders = () => {
 
   const itemsPerPage = 10;
 
-  // ✅ reset page on data change
+  
   useEffect(() => {
     setCurrentPage(1);
   }, [orders.length]);
