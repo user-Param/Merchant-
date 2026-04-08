@@ -1,6 +1,7 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthRepository } from '../../database/storage/repositories/auth.repo';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -17,44 +18,74 @@ export class AuthService {
     }
 
     const storeId = `STORE-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-    const passwordHash = this.hashPassword(store.password);
+    const passwordHash = await this.hashPassword(store.password);
 
-    return this.repo.create({
+    const result = await this.repo.create({
       store_id: storeId,
       name: store.name,
       email: store.email,
       password_hash: passwordHash,
     });
+
+    const token = this.generateToken(storeId);
+    return {
+      token,
+      store_id: storeId,
+      name: store.name,
+      email: store.email,
+    };
   }
 
   async login(email: string, password: string): Promise<unknown> {
-    const store: unknown = await this.repo.findByEmail(email);
-    if (!store) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    }
+    try {
+      const store: unknown = await this.repo.findByEmail(email);
+      if (!store) {
+        throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+      }
 
-    const passwordHash = this.hashPassword(password);
-    if ((store as Record<string, unknown>).password_hash !== passwordHash) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-    }
+      const passwordMatch = await this.comparePassword(
+        password,
+        (store as Record<string, unknown>).password_hash as string,
+      );
+      if (!passwordMatch) {
+        throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+      }
 
-    const token = this.generateToken(
-      (store as Record<string, string>).store_id,
-    );
-    return {
-      token,
-      store_id: (store as Record<string, string>).store_id,
-      name: (store as Record<string, string>).name,
-      email: (store as Record<string, string>).email,
-    };
+      const token = this.generateToken(
+        (store as Record<string, string>).store_id,
+      );
+      return {
+        token,
+        store_id: (store as Record<string, string>).store_id,
+        name: (store as Record<string, string>).name,
+        email: (store as Record<string, string>).email,
+      };
+    } catch (err) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+      console.error('Login error:', err);
+      throw new HttpException(
+        'Authentication failed. Please try again.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async validateStore(storeId: string): Promise<unknown> {
     return this.repo.findByStoreId(storeId);
   }
 
-  private hashPassword(password: string): string {
-    return crypto.createHash('sha256').update(password).digest('hex');
+  private async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(password, saltRounds);
+  }
+
+  private async comparePassword(
+    password: string,
+    hash: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(password, hash);
   }
 
   private generateToken(storeId: string): string {

@@ -3,8 +3,15 @@ import { AppModule } from './app.module';
 import { PrecomputeWorker } from './workers/precompute.service';
 import { connectRedis } from './database/cache/src/cache.service';
 import { connectProducer } from './kafka/producer';
+import { DatabaseInitService } from './database/init.service';
 
 async function bootstrap() {
+  // Initialize database schema and seed data
+  const dbInit = new DatabaseInitService();
+  await dbInit.initialize().catch((err) =>
+    console.error('Failed to initialize database:', err),
+  );
+
   // Ensure Redis is connected before starting
   await connectRedis().catch((err) =>
     console.error('Failed to connect to Redis:', err),

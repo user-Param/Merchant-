@@ -13,6 +13,7 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -80,6 +81,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signup = async (name: string, email: string, password: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          (errorData as Record<string, unknown>).message
+            ? String((errorData as Record<string, unknown>).message)
+            : 'Signup failed'
+        );
+      }
+
+      const data = await response.json();
+
+      // Store auth data
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_email', data.email);
+      localStorage.setItem('user_name', data.name);
+      localStorage.setItem('store_id', data.store_id);
+
+      setUser({
+        token: data.token,
+        email: data.email,
+        name: data.name,
+        store_id: data.store_id,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_email');
@@ -94,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         login,
+        signup,
         logout,
         isAuthenticated: !!user,
       }}

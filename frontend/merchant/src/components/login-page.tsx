@@ -3,16 +3,26 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useError } from '@/context/error-context';
-import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { Lock, Mail, AlertCircle, User } from 'lucide-react';
 
 export function LoginPage() {
-  const { login, loading } = useAuth();
+  const { login, signup, loading } = useAuth();
   const { showError } = useError();
+  
+  // State management
+  const [isSignup, setIsSignup] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleSignin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -20,6 +30,11 @@ export function LoginPage() {
       // Validate inputs
       if (!email.trim()) {
         showError('Email is required');
+        setIsLoading(false);
+        return;
+      }
+      if (!validateEmail(email)) {
+        showError('Please enter a valid email address');
         setIsLoading(false);
         return;
       }
@@ -31,7 +46,57 @@ export function LoginPage() {
 
       await login(email, password);
     } catch (err) {
-      showError(err instanceof Error ? err.message : 'Login failed');
+      showError(err instanceof Error ? err.message : 'Sign in failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Validate inputs
+      if (!name.trim()) {
+        showError('Store name is required');
+        setIsLoading(false);
+        return;
+      }
+      if (name.trim().length < 2) {
+        showError('Store name must be at least 2 characters');
+        setIsLoading(false);
+        return;
+      }
+      if (!email.trim()) {
+        showError('Email is required');
+        setIsLoading(false);
+        return;
+      }
+      if (!validateEmail(email)) {
+        showError('Please enter a valid email address');
+        setIsLoading(false);
+        return;
+      }
+      if (!password.trim()) {
+        showError('Password is required');
+        setIsLoading(false);
+        return;
+      }
+      if (password.length < 6) {
+        showError('Password must be at least 6 characters');
+        setIsLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        showError('Passwords do not match');
+        setIsLoading(false);
+        return;
+      }
+
+      await signup(name, email, password);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Sign up failed');
     } finally {
       setIsLoading(false);
     }
@@ -57,8 +122,65 @@ export function LoginPage() {
             <p className="text-blue-100">Analytics & Store Management</p>
           </div>
 
+          {/* Toggle Buttons */}
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => {
+                setIsSignup(false);
+                setName('');
+                setEmail('');
+                setPassword('');
+                setConfirmPassword('');
+              }}
+              className={`flex-1 py-3 font-medium text-center transition ${
+                !isSignup
+                  ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => {
+                setIsSignup(true);
+                setName('');
+                setEmail('');
+                setPassword('');
+                setConfirmPassword('');
+              }}
+              className={`flex-1 py-3 font-medium text-center transition ${
+                isSignup
+                  ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Sign Up
+            </button>
+          </div>
+
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <form onSubmit={isSignup ? handleSignup : handleSignin} className="p-8 space-y-6">
+            {/* Store Name Field (Signup Only) */}
+            {isSignup && (
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Store Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="My Awesome Store"
+                    disabled={isLoading || loading}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -90,22 +212,45 @@ export function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={isSignup ? 'At least 6 characters' : '••••••••'}
                   disabled={isLoading || loading}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
 
-            {/* Info Box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-700">
-                <p className="font-medium">Demo Credentials:</p>
-                <p>Email: merchant@example.com</p>
-                <p>Password: password123</p>
+            {/* Confirm Password Field (Signup Only) */}
+            {isSignup && (
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm your password"
+                    disabled={isLoading || loading}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Info Box */}
+            {!isSignup && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+                <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-700">
+                  <p className="font-medium">Demo Credentials:</p>
+                  <p>Email: admin@techgear.com</p>
+                  <p>Password: password</p>
+                </div>
+              </div>
+            )}
 
             {/* Submit Button */}
             <button
@@ -116,12 +261,21 @@ export function LoginPage() {
               {isLoading || loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Signing in...
+                  {isSignup ? 'Creating Account...' : 'Signing in...'}
                 </>
               ) : (
                 <>
-                  <Lock className="w-5 h-5" />
-                  Sign In
+                  {isSignup ? (
+                    <>
+                      <User className="w-5 h-5" />
+                      Create Account
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-5 h-5" />
+                      Sign In
+                    </>
+                  )}
                 </>
               )}
             </button>
@@ -130,7 +284,11 @@ export function LoginPage() {
           {/* Footer */}
           <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
             <p className="text-center text-sm text-gray-600">
-              Protected by enterprise-grade security
+              {isSignup ? (
+                <>Already have an account? <span className="text-blue-600 font-medium cursor-pointer" onClick={() => setIsSignup(false)}>Sign in</span></>
+              ) : (
+                <>Don't have an account? <span className="text-blue-600 font-medium cursor-pointer" onClick={() => setIsSignup(true)}>Create one</span></>
+              )}
             </p>
           </div>
         </div>
