@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CustomersRepository } from '../../../database/storage/repositories/customers.repo';
+import { CustomersRepository } from '../../database/storage/repositories/customers.repo';
 
 @Injectable()
 export class CustomersService {

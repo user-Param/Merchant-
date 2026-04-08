@@ -1,12 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { PrecomputeWorker } from './workers/precompute.service';
-import { connectRedis } from '../database/cache/src/cache.service';
+import { connectRedis } from './database/cache/src/cache.service';
+import { connectProducer } from './kafka/producer';
 
 async function bootstrap() {
   // Ensure Redis is connected before starting
   await connectRedis().catch((err) =>
     console.error('Failed to connect to Redis:', err),
+  );
+
+  // Connect Kafka Producer
+  await connectProducer().catch((err) =>
+    console.error('Failed to connect to Kafka Producer:', err),
   );
 
   const app = await NestFactory.create(AppModule);
@@ -20,7 +26,9 @@ async function bootstrap() {
 
   // Start the background precompute worker
   const worker = new PrecomputeWorker();
-  worker.start();
+  void worker.start().catch((err) =>
+    console.error('Failed to start Precompute Worker:', err),
+  );
   console.log(`⚙️ Precompute Worker initialized and running.`);
 }
 

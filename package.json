@@ -1,7 +1,10 @@
 {
 	"dependencies": {
+		"@types/node": "^25.5.2",
+		"kafkajs": "^2.2.4",
 		"pg": "^8.20.0",
-		"redis": "^5.11.0"
+		"redis": "^5.11.0",
+		"typescript": "^6.0.2"
 	},
 	"devDependencies": {
 		"@types/pg": "^8.20.0"

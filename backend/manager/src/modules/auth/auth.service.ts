@@ -1,5 +1,5 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { AuthRepository } from '../../../database/storage/repositories/auth.repo';
+import { AuthRepository } from '../../database/storage/repositories/auth.repo';
 import * as crypto from 'crypto';
 
 @Injectable()

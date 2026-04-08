@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ProductsRepository } from '../../../database/storage/repositories/products.repo';
-import { cache } from '../../../database/cache/src/cache.service';
+import { ProductsRepository } from '../../database/storage/repositories/products.repo';
+import { cache } from '../../database/cache/src/cache.service';
 
 @Injectable()
 export class ProductsService {

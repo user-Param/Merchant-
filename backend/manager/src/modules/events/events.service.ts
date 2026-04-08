@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { query } from '../../../database/storage/connection/postgres.client';
+import { query } from '../../database/storage/connection/postgres.client';
+import { sendMessage } from '../../kafka/producer';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class EventTrackingService {
@@ -9,20 +11,24 @@ export class EventTrackingService {
     product_id?: string;
     amount?: number;
   }): Promise<unknown> {
-    const event_id = `evt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const sql = `
-      INSERT INTO events (event_id, store_id, event_type, product_id, amount)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, event_id, store_id, event_type, product_id, amount, timestamp
-    `;
-    const result = await query(sql, [
+    const event_id = uuidv4();
+    const eventPayload = {
       event_id,
-      event.store_id,
-      event.event_type,
-      event.product_id || null,
-      event.amount || 0,
-    ]);
-    return (result as unknown as Record<string, unknown>).rows?.[0];
+      store_id: event.store_id,
+      event_type: event.event_type,
+      product_id: event.product_id || null,
+      amount: event.amount || 0,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Send to Kafka for async processing
+    await sendMessage('merchant_events', eventPayload);
+
+    return {
+      success: true,
+      message: 'Event accepted',
+      event_id,
+    };
   }
 
   async getRecentEvents(storeId: string, limit = 20): Promise<unknown> {
