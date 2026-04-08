@@ -164,7 +164,40 @@ cd frontend/merchant && npm install && cd ../../
 
 ### 2️⃣ Start All Services
 
+
+
+
+
 ```bash
+
+touch .env
+
+#Inside .env
+DB_HOST=YOUR_DB_HOST
+DB_PORT=YOUR_DB_PORT
+DB_USER=YOUR_DB_USER
+DB_PASSWORD=YOUR_DB_PASSWORD
+DB_NAME=YOUR_DB_NAME
+
+# ==============================
+# REDIS CONFIGURATION
+# ==============================
+REDIS_URL=YOUR_REDIS_URL
+
+# ==============================
+# KAFKA CONFIGURATION
+# ==============================
+KAFKA_BROKER=YOUR_KAFKA_BROKER
+KAFKAJS_NO_PARTITIONER_WARNING=1
+
+# ==============================
+# FRONTEND CONFIGURATION
+# ==============================
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000/api/v1
+NEXT_PUBLIC_STORE_ID=store_001
+
+
+
 # Make script executable (only needed once)
 chmod +x start.sh
 
@@ -191,16 +224,6 @@ Once startup completes, open your browser:
 | ⚡ **Redis** | localhost:6379 | Cache & session storage |
 | 📨 **Kafka** | localhost:9092 | Message queue (internal) |
 
-### 4️⃣ Login with Demo Credentials
-
-On the login page, use:
-
-```
-📧 Email:    merchant@example.com
-🔑 Password: password123
-```
-
----
 
 ## Detailed Setup
 
