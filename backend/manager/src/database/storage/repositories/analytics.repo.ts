@@ -80,6 +80,38 @@ export class AnalyticsRepository {
     };
   }
 
+  // 5b. Retention Trend Over Time (for ReturningCard Chart)
+  async getRetentionTrend(storeId: string) {
+    const sql = `
+      WITH customer_retention AS (
+        SELECT 
+          ad.date,
+          COALESCE(
+            ROUND(
+              (COUNT(DISTINCT CASE WHEN c.total_orders > 1 THEN c.customer_id END)::numeric / 
+               NULLIF(COUNT(DISTINCT c.customer_id), 0) * 100),
+              1
+            ),
+            0
+          ) as retention_rate
+        FROM analytics_daily ad
+        LEFT JOIN customers c ON c.store_id = ad.store_id
+        WHERE ad.store_id = $1 AND ad.date >= (CURRENT_DATE - INTERVAL '30 days') AND ad.date < CURRENT_DATE
+        GROUP BY ad.date
+      )
+      SELECT date, COALESCE(retention_rate, 0) as retention_rate
+      FROM customer_retention
+      ORDER BY date ASC
+    `;
+    try {
+      const result = await query(sql, [storeId]);
+      return result.rows;
+    } catch (error) {
+      console.error('Error fetching retention trend:', error);
+      return [];
+    }
+  }
+
   // 6. Conversion Funnel (EXCLUDING TODAY)
   async getConversionFunnel(storeId: string) {
     const sql = `

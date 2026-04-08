@@ -86,6 +86,12 @@ export class AnalyticsService {
     );
   }
 
+  async getRetentionTrend(storeId: string) {
+    return this.getCachedOrFetch(`analytics:${storeId}:retention_trend`, () =>
+      this.repo.getRetentionTrend(storeId),
+    );
+  }
+
   async getConversionFunnel(storeId: string) {
     const historical = await this.getCachedHistorical(
       `analytics:${storeId}:historical_funnel`,

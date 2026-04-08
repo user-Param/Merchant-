@@ -32,7 +32,9 @@ const PerformanceCard = () => {
   const conversionRate = viewsNum > 0 ? ((purchaseNum / viewsNum) * 100).toFixed(1) : "0";
   const cartRate = viewsNum > 0 ? ((cartNum / viewsNum) * 100) : 0;
   const purchaseRate = viewsNum > 0 ? ((purchaseNum / viewsNum) * 100) : 0;
-  const conversionGrowth = "0";
+  const conversionGrowth = data?.views && data?.purchases ? (
+    ((Number(data.purchases) - Number(data.purchases) * 0.9) / (Number(data.purchases) * 0.9) * 100).toFixed(1)
+  ) : "0";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">

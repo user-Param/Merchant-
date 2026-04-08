@@ -49,6 +49,14 @@ export class AnalyticsController {
     return this.analyticsService.getRetentionStats(storeId);
   }
 
+  @Get('retention-trend')
+  async getRetentionTrend(
+    @Headers('x-store-id') storeId: string,
+  ): Promise<unknown> {
+    this.checkStoreId(storeId);
+    return this.analyticsService.getRetentionTrend(storeId);
+  }
+
   @Get('funnel')
   async getConversionFunnel(
     @Headers('x-store-id') storeId: string,

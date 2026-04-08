@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { MoreHorizontal, ExternalLink } from "lucide-react";
 import { useAnalytics } from "@/hooks/use-analytics";
+import { formatChartDate } from "@/lib/date-utils";
 import {
   LineChart,
   Line,
@@ -28,10 +29,15 @@ const VisitorsCard = () => {
     ? data.reduce((sum, row) => sum + Number(row?.visitors ?? 0), 0).toLocaleString()
     : "0";
 
+  // Calculate growth rate from trend data
+  const visitorsGrowth = Array.isArray(data) && data.length > 1
+    ? (((data[data.length - 1]?.visitors || 0) - (data[0]?.visitors || 0)) / (data[0]?.visitors || 1) * 100).toFixed(1)
+    : "0";
+
   // Prepare chart data (last 14 days)
   const chartData = Array.isArray(data)
     ? data.slice(-14).map((d) => ({
-        date: new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        date: formatChartDate(d.date),
         visitors: Number(d.visitors || 0),
       }))
     : [];
@@ -45,7 +51,7 @@ const VisitorsCard = () => {
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl font-bold">{loading ? "..." : totalVisitors}</span>
             <span className="text-green-500 text-sm font-semibold flex items-center gap-0.5">
-              +15.2%
+              {Number(visitorsGrowth) > 0 ? '+' : ''}{visitorsGrowth}%
             </span>
           </div>
         </div>
@@ -81,7 +87,7 @@ const VisitorsCard = () => {
               <YAxis hide />
               <Tooltip
                 contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", borderRadius: "8px" }}
-                formatter={(value) => [`${value} visitors`, "Visitors"]}
+                formatter={(value) => [`${typeof value === 'number' ? value.toLocaleString() : '0'} visitors`, "Visitors"]}
               />
               <Line
                 type="monotone"

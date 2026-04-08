@@ -8,7 +8,7 @@ import ProductCard from "@/components/product-card";
 import ReturningCard from "@/components/returning-card";
 import PerformanceCard from "@/components/performance-card";
 import { useAnalytics } from "@/hooks/use-analytics";
-import { useProducts } from "@/hooks/use-api";
+import { useProducts, useOrderStats } from "@/hooks/use-api";
 import {
   LineChart,
   Line,
@@ -52,11 +52,13 @@ const Dashboard = () => {
   const { data: orderData } = useAnalytics<OrderData[]>("orders-trend");
   const { data: topProducts } = useAnalytics<unknown[]>("top-products");
   const { data: recentActivity } = useAnalytics<unknown[]>("recent-activity");
+  const { totalOrders, totalRevenue, loading: statsLoading } = useOrderStats();
 
-  const revenue = data?.total_revenue ? Number(data.total_revenue) : 0;
-  const orders = data?.total_orders ? Number(data.total_orders) : 0;
+  // Use real total orders from database, or fallback to overview API
+  const orders = !statsLoading ? totalOrders : (data?.total_orders ? Number(data.total_orders) : 0);
+  const revenue = !statsLoading ? totalRevenue : (data?.total_revenue ? Number(data.total_revenue) : 0);
   const views = data?.total_views ? Number(data.total_views) : 0;
-  const conversionRate = data?.avg_conversion ? Number(data.avg_conversion) : 0;
+  const conversionRate = orders > 0 && views > 0 ? (orders / views * 100) : 0;
 
   // Calculate growth rates from trend data
   const chartVisitors = Array.isArray(visitorData) ? visitorData.slice(-30) : [];
@@ -87,7 +89,7 @@ const Dashboard = () => {
 
   const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
-  if (loading) {
+  if (loading || statsLoading) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">

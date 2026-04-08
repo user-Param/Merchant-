@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useAnalytics } from "@/hooks/use-analytics";
+import { formatChartDate } from "@/lib/date-utils";
 
 const timeRanges = ["1d", "7d", "15d", "1m", "3m", "6m", "12m"];
 
@@ -22,20 +23,24 @@ interface RetentionResponse {
 }
 
 interface RetentionData {
-  date?: string;
-  rate?: number;
+  date: string;
   retention_rate?: number;
 }
 
 const ReturningCard = () => {
   const [selectedRange, setSelectedRange] = useState("1m");
   const { data: retentionData } = useAnalytics<RetentionResponse>("retention");
-  const { data: retentionTrend } = useAnalytics<RetentionData[]>("visitors-trend");
+  const { data: retentionTrend } = useAnalytics<RetentionData[]>("retention-trend");
   const [chartData, setChartData] = useState<RetentionData[]>([]);
 
   useEffect(() => {
     if (Array.isArray(retentionTrend) && retentionTrend.length > 0) {
-      setChartData(retentionTrend.slice(-14));
+      const processedData = retentionTrend.slice(-14).map((item) => ({
+        ...item,
+        retention_rate: Number(item.retention_rate || 0),
+        date: formatChartDate(item.date)
+      }));
+      setChartData(processedData);
     }
   }, [retentionTrend]);
 
@@ -43,8 +48,9 @@ const ReturningCard = () => {
   const retentionRate = retentionData?.retention_rate || 0;
   const avgLtv = retentionData?.avg_ltv || 0;
   
-  const prevRetentionRate = retentionRate > 40 ? retentionRate - Math.random() * 10 : retentionRate;
-  const growthRate = retentionRate > 0 ? Math.round(((retentionRate - prevRetentionRate) / prevRetentionRate) * 100 * 10) / 10 : 0;
+  const growthRate = chartData.length > 1
+    ? Math.round((((chartData[chartData.length - 1]?.retention_rate || 0) - (chartData[0]?.retention_rate || 0)) / Math.max(1, chartData[0]?.retention_rate || 1)) * 100 * 10) / 10
+    : 0;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -97,7 +103,7 @@ const ReturningCard = () => {
               <YAxis hide />
               <Tooltip
                 contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", borderRadius: "8px" }}
-                formatter={(value) => [`${value}%`, "Retention Rate"]}
+                formatter={(value) => [`${typeof value === 'number' ? value.toFixed(1) : value}%`, "Retention Rate"]}
               />
               <Area
                 type="monotone"

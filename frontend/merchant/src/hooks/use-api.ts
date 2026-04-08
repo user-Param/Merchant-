@@ -5,13 +5,22 @@ const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID || 'store_001';
 
 interface Product {
   id: string;
+  product_id: string;
   name: string;
+  price: number | string;
+  category: string;
+  stock: number | string;
   [key: string]: unknown;
 }
 
 interface Order {
   id: string;
+  order_id: string;
+  customer_id: string;
+  customer_name?: string;
   status: string;
+  total: number | string;
+  created_at: string;
   [key: string]: unknown;
 }
 
@@ -197,6 +206,46 @@ export function useCustomers() {
   };
 
   return { customers, loading, error, createCustomer, deleteCustomer, refetch: fetchCustomers };
+}
+
+export function useOrderStats() {
+  const [stats, setStats] = useState({ totalOrders: 0, totalRevenue: 0, totalCustomers: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [ordersRes, customersRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/orders`, { headers: { 'x-store-id': STORE_ID } }),
+          fetch(`${API_BASE_URL}/customers`, { headers: { 'x-store-id': STORE_ID } })
+        ]);
+
+        if (!ordersRes.ok || !customersRes.ok) throw new Error('Failed to fetch stats');
+        
+        const orders = await ordersRes.json();
+        const customers = await customersRes.json();
+        
+        const totalRevenue = Array.isArray(orders) 
+          ? orders.reduce((sum: number, o: any) => sum + Number(o.total || 0), 0)
+          : 0;
+
+        setStats({
+          totalOrders: Array.isArray(orders) ? orders.length : 0,
+          totalRevenue,
+          totalCustomers: Array.isArray(customers) ? customers.length : 0
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchStats();
+  }, []);
+
+  return { ...stats, loading, error };
 }
 
 export function useAuth() {

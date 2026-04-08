@@ -84,7 +84,7 @@ const ProductCard = () => {
               <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={30} />
               <Tooltip
                 contentStyle={{ backgroundColor: "#fff", border: "1px solid #ccc", borderRadius: "8px" }}
-                formatter={(value) => `₹${value.toLocaleString()}`}
+                formatter={(value) => `₹${typeof value === 'number' ? value.toLocaleString() : '0'}`}
               />
               <Bar dataKey="revenue" fill="#10b981" radius={[0, 8, 8, 0]} />
             </BarChart>
